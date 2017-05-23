@@ -31,12 +31,9 @@
   (eyebrowse-create-window-config))
 
 ;; Quit only if this is the last tab open, otherwise close this tab.
-;; Todo: Also need sure that this doesn't break window functionality
 (evil-define-command evil-tab-sensitive-quit (&optional bang)
-  :repeat nil
-  (interactive "<!>")
   (let ((window-configs (eyebrowse--get 'window-configs)))
-  (if (> (length window-configs) 1)
+  (if (and (one-window-p) (> (length window-configs) 1))
     (eyebrowse-close-window-config)
     (evil-quit bang))))
 
