@@ -1,7 +1,7 @@
 ;;; evil-tabs.el --- Integrating Vim-style tabs for Evil mode users.
 ;; Copyright 2013 Kris Jenkins
 ;; Copyright 2017 Sean Wilson
-;; 
+;;
 ;; Author: Sean Wilson <spwilson2@wisc.edu>
 ;; Maintainer: Sean Wilson <spwilson2@wisc.edu>
 ;; Keywords: evil tab tabs vim eyebrowse
@@ -21,14 +21,30 @@
 (defvar evil-tabs-mode-map (make-sparse-keymap)
   "Evil-tabs-mode's keymap.")
 
-;; TODO: need to add support for tabe specifying a file
-;; use eyebrowse-new-workspace:
-;(evil-define-command evil-tabs-tabedit (file)
-;  (interactive "<f>")
-;  (elscreen-find-file file))
+(evil-define-command evil-tabs-tabedit (&optional file)
+  (interactive "<f>")
+  "Open the given file in a new tab.
+If a file isn't provided just open a scratch buffer instead."
+  (let
+      ;; Save the original setting so we don't confuse users
+      ((evil-tabs--temp-eyebrowse-new-workspace eyebrowse-new-workspace))
+    (progn
+      (if file (setq eyebrowse-new-workspace file) (setq eyebrowse-new-workspace t))
+      (eyebrowse-create-window-config))
+    ;; Restore the original setting.
+    (setq eyebrowse-new-workspace evil-tabs--temp-eyebrowse-new-workspace)))
 
-(evil-define-command evil-tabs-tabedit ()
-  (eyebrowse-create-window-config))
+(evil-define-command evil-tabs-tabclone ()
+  (interactive)
+  "Clone the current tab's window tab configuration into a new tab."
+  (let
+      ;; Save the original setting so we don't confuse users
+      ((evil-tabs--temp-eyebrowse-new-workspace eyebrowse-new-workspace))
+    (progn
+      (setq eyebrowse-new-workspace nil)
+      (eyebrowse-create-window-config))
+    ;; Restore the original setting.
+    (setq eyebrowse-new-workspace evil-tabs--temp-eyebrowse-new-workspace)))
 
 ;; Quit only if this is the last tab open, otherwise close this tab.
 (evil-define-command evil-tab-sensitive-quit (&optional bang)
@@ -40,22 +56,49 @@
 (evil-define-command evil-tab-close ()
   (eyebrowse-close-window-config))
 
-(evil-define-motion evil-tabs-goto-tab (&optional count)
+(defun evil-tabs-goto-tab (&optional count)
+  (interactive "P")
+  "Go back or forward count tabs. If count is nil, go forward a single tab."
   (if count
-     (eyebrowse-next-window-config (- count 1))
-     (eyebrowse-next-window-config 1)))
+      (progn
+	(message (int-to-string count))
+      (let ((motion
+	     (if (> count 0) ;; Incase evil ever gets negative prefix working.
+		 'eyebrowse-next-window-config
+	         'eyebrowse-prev-window-config))
+	    (count (abs count)))
+	(while (>= (decf count) 0)
+	  (eval 'motion))))
 
+    (eyebrowse-next-window-config nil)))
+
+;;(evil-define-motion 'evil-tabs-goto-tab)
+(evil-define-motion evil--tabs-goto-tab-motion (&optional count)
+  (evil-tabs-goto-tab count))
+
+;;(evil-define-motion evil-tabs-goto-tab (&optional count)
+;;  (interactive "P")
+;;  (progn
+;;    (message (when count (number-to-string count)))
+;;  (if count
+;;     (eyebrowse-next-window-config count)
+;;     (eyebrowse-next-window-config 1))))
 
 (evil-ex-define-cmd "tabe[dit]" 'evil-tabs-tabedit)
 (evil-ex-define-cmd "tabclone" 'evil-tabs-tabedit)
 (evil-ex-define-cmd "tabc[lose]" 'evil-tab-close)
 (evil-ex-define-cmd "q[uit]" 'evil-tab-sensitive-quit)
+(evil-ex-define-cmd "tabnew" 'evil-tabs-tabed)
+(evil-ex-define-cmd "tabn[ext]" 'eyebrowse-next-window-config)
+(evil-ex-define-cmd "tabp[rev]" 'eyebrowse-prev-window-config)
 
 ; TODO allow numbers
 (evil-define-key 'normal evil-tabs-mode-map
-  "gt" 'eyebrowse-next-window-config
-  "gT" 'eyebrowse-prev-window-config
-;  "gt" 'evil-tabs-goto-tab
+  "gt" 'evil--tabs-goto-tab-motion
+  ;"gT" 'evil--tabs-goto-tab-motion
+  "gT" 'evil-tabs-goto-tab
+  "gc" 'eyebrowse-close-window-config
+  "zx" 'eyebrowse-last-window-config
 ;  "T" 'evil-tabs-current-buffer-to-tab
   )
 
@@ -73,9 +116,6 @@
 ;
 ;(evil-ex-define-cmd "tabd[isplay]" 'elscreen-toggle-display-tab)
 ;(evil-ex-define-cmd "tabg[oto]" 'elscreen-goto)
-;(evil-ex-define-cmd "tabnew" 'elscreen-create)
-;(evil-ex-define-cmd "tabn[ext]" 'elscreen-next)
-;(evil-ex-define-cmd "tabp[rev]" 'elscreen-previous)
 ;(evil-ex-define-cmd "tabr[ename]" 'elscreen-screen-nickname)
 ;(evil-ex-define-cmd "tabs[elect]" 'elscreen-select-and-goto)
 ;(evil-ex-define-cmd "tabw[ith]" 'elscreen-find-and-goto-by-buffer)
