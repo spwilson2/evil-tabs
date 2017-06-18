@@ -58,31 +58,38 @@ If a file isn't provided just open a scratch buffer instead."
 
 (defun evil-tabs-goto-tab (&optional count)
   (interactive "P")
-  "Go back or forward count tabs. If count is nil, go forward a single tab."
+  "Go back or forward `count` tabs. If `count` is nil, go forward a single tab."
   (if count
       (progn
 	(message (int-to-string count))
       (let ((motion
-	     (if (> count 0) ;; Incase evil ever gets negative prefix working.
+	     (if (> count 0)
 		 'eyebrowse-next-window-config
 	         'eyebrowse-prev-window-config))
 	    (count (abs count)))
+	(progn
+	  (message (int-to-string count))
 	(while (>= (decf count) 0)
-	  (eval 'motion))))
+	  (funcall motion nil)))))
 
     (eyebrowse-next-window-config nil)))
 
-;;(evil-define-motion 'evil-tabs-goto-tab)
-(evil-define-motion evil--tabs-goto-tab-motion (&optional count)
-  (evil-tabs-goto-tab count))
+(defun evil-tabs-only ()
+  "Close all other tabs."
+  (interactive)
+  (let* ((window-configs (eyebrowse--get 'window-configs))
+	 (slot (eyebrowse--get 'current-slot))
+	 (match (assq (eyebrowse--get 'current-slot) window-configs)))
+    (progn
+      (eyebrowse--set 'window-configs (make-list 1 match))
+      (eyebrowse--set 'last-slot slot))))
 
-;;(evil-define-motion evil-tabs-goto-tab (&optional count)
-;;  (interactive "P")
-;;  (progn
-;;    (message (when count (number-to-string count)))
-;;  (if count
-;;     (eyebrowse-next-window-config count)
-;;     (eyebrowse-next-window-config 1))))
+(evil-define-motion evil--tabs-goto-tab-motion-forward (&optional count)
+  (interactive "P")
+  (evil-tabs-goto-tab count))
+(evil-define-motion evil--tabs-goto-tab-motion-backward (&optional count)
+  (interactive "P")
+  (evil-tabs-goto-tab (if count (- count) (- 1))))
 
 (evil-ex-define-cmd "tabe[dit]" 'evil-tabs-tabedit)
 (evil-ex-define-cmd "tabclone" 'evil-tabs-tabedit)
@@ -91,19 +98,17 @@ If a file isn't provided just open a scratch buffer instead."
 (evil-ex-define-cmd "tabnew" 'evil-tabs-tabed)
 (evil-ex-define-cmd "tabn[ext]" 'eyebrowse-next-window-config)
 (evil-ex-define-cmd "tabp[rev]" 'eyebrowse-prev-window-config)
+(evil-ex-define-cmd "tabo[nly]" 'evil-tabs-only)
 
-; TODO allow numbers
 (evil-define-key 'normal evil-tabs-mode-map
-  "gt" 'evil--tabs-goto-tab-motion
-  ;"gT" 'evil--tabs-goto-tab-motion
-  "gT" 'evil-tabs-goto-tab
+  "gt" 'evil--tabs-goto-tab-motion-forward
+  "gT" 'evil--tabs-goto-tab-motion-backward
   "gc" 'eyebrowse-close-window-config
   "zx" 'eyebrowse-last-window-config
 ;  "T" 'evil-tabs-current-buffer-to-tab
   )
 
 ;TODO: Close all tabs but 'current-slot
-;(evil-ex-define-cmd "tabo[nly]" 'TODO)
 
 ; TODO Moves the current buffer to its own tab
 ;(evil-define-command evil-tabs-current-buffer-to-tab ()
