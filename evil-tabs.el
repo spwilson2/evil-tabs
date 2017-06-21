@@ -40,9 +40,8 @@ If a file isn't provided just open a scratch buffer instead."
   (let
       ;; Save the original setting so we don't confuse users
       ((evil-tabs--temp-eyebrowse-new-workspace eyebrowse-new-workspace))
-    (progn
-      (setq eyebrowse-new-workspace nil)
-      (eyebrowse-create-window-config))
+    (setq eyebrowse-new-workspace nil)
+    (eyebrowse-create-window-config)
     ;; Restore the original setting.
     (setq eyebrowse-new-workspace evil-tabs--temp-eyebrowse-new-workspace)))
 
@@ -75,7 +74,7 @@ If a file isn't provided just open a scratch buffer instead."
     (eyebrowse-next-window-config nil)))
 
 (defun evil-tabs-only ()
-  "Close all other tabs."
+  "Close all other tabs except the current one."
   (interactive)
   (let* ((window-configs (eyebrowse--get 'window-configs))
 	 (slot (eyebrowse--get 'current-slot))
@@ -92,7 +91,7 @@ If a file isn't provided just open a scratch buffer instead."
   (evil-tabs-goto-tab (if count (- count) (- 1))))
 
 (evil-ex-define-cmd "tabe[dit]" 'evil-tabs-tabedit)
-(evil-ex-define-cmd "tabclone" 'evil-tabs-tabedit)
+(evil-ex-define-cmd "tabclone" 'evil-tabs-tabclone)
 (evil-ex-define-cmd "tabc[lose]" 'evil-tab-close)
 (evil-ex-define-cmd "q[uit]" 'evil-tab-sensitive-quit)
 (evil-ex-define-cmd "tabnew" 'evil-tabs-tabed)
@@ -107,8 +106,6 @@ If a file isn't provided just open a scratch buffer instead."
   "zx" 'eyebrowse-last-window-config
 ;  "T" 'evil-tabs-current-buffer-to-tab
   )
-
-;TODO: Close all tabs but 'current-slot
 
 ; TODO Moves the current buffer to its own tab
 ;(evil-define-command evil-tabs-current-buffer-to-tab ()
