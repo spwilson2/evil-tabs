@@ -29,7 +29,7 @@ If a file isn't provided just open a scratch buffer instead."
       ;; Save the original setting so we don't confuse users
       ((evil-tabs--temp-eyebrowse-new-workspace eyebrowse-new-workspace))
     (progn
-      (if file (setq eyebrowse-new-workspace file) (setq eyebrowse-new-workspace t))
+      (if file (setq eyebrowse-new-workspace file) (setq eyebrowse-new-workspace "*scratch*"))
       (eyebrowse-create-window-config))
     ;; Restore the original setting.
     (setq eyebrowse-new-workspace evil-tabs--temp-eyebrowse-new-workspace)))
